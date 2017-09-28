@@ -52,17 +52,11 @@ public:
     // Return the VNoteFile if succeed.
     VNoteFile *addFile(const QString &p_name, int p_index);
 
-    // Delete @p_file both from disk and config, as well as its local images.
-    void deleteFile(VNoteFile *p_file);
+    // Add the file in the config and m_files. If @p_index is -1, add it at the end.
+    bool addFile(VNoteFile *p_file, int p_index);
 
     // Rename current directory to @p_name.
     bool rename(const QString &p_name);
-
-    // Copy @p_srcFile to @p_destDir, setting new name to @p_destName.
-    // @p_cut: copy or cut.
-    // Returns the dest VNoteFile.
-    static VNoteFile *copyFile(VDirectory *p_destDir, const QString &p_destName,
-                               VNoteFile *p_srcFile, bool p_cut);
 
     static VDirectory *copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                                      VDirectory *p_srcDir, bool p_cut);
@@ -120,9 +114,6 @@ private:
     // Add notebook part config to @p_json.
     // Should only be called with root directory.
     void addNotebookConfig(QJsonObject &p_json) const;
-
-    // Add the file in the config and m_files. If @p_index is -1, add it at the end.
-    bool addFile(VNoteFile *p_file, int p_index);
 
     // Add the directory in the config and m_subDirs. If @p_index is -1, add it at the end.
     // Return the VDirectory if succeed.

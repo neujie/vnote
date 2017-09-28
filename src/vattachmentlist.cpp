@@ -242,7 +242,7 @@ void VAttachmentList::addAttachments(const QStringList &p_files)
     }
 
     if (addedFiles > 0) {
-        g_vnote->getMainWindow()->showStatusMessage(tr("Added %1 %2 as attachments")
+        g_vnote->getMainWindow()->showStatusMessage(tr("%1 %2 added as attachments")
                                                       .arg(addedFiles)
                                                       .arg(addedFiles > 1 ? tr("files") : tr("file")));
     }
@@ -300,7 +300,7 @@ void VAttachmentList::handleItemActivated(QListWidgetItem *p_item)
 
 void VAttachmentList::deleteSelectedItems()
 {
-    QVector<QString> names;
+    QVector<ConfirmItemInfo> items;
     const QList<QListWidgetItem *> selectedItems = m_attachmentList->selectedItems();
 
     if (selectedItems.isEmpty()) {
@@ -308,24 +308,35 @@ void VAttachmentList::deleteSelectedItems()
     }
 
     for (auto const & item : selectedItems) {
-        names.push_back(item->text());
+        items.push_back(ConfirmItemInfo(item->text(),
+                                        item->text(),
+                                        "",
+                                        NULL));
     }
 
-    QString info = tr("Are you sure to delete these attachments of note "
-                      "<span style=\"%1\">%2</span>? "
-                      "You could find deleted files in the recycle "
-                      "bin of this notebook.<br>"
-                      "Click \"Cancel\" to leave them untouched.")
+    QString text = tr("Are you sure to delete these attachments of note "
+                      "<span style=\"%1\">%2</span>?")
                      .arg(g_config->c_dataTextStyle).arg(m_file->getName());
+
+    QString info = tr("You could find deleted files in the recycle "
+                      "bin of this note.<br>"
+                      "Click \"Cancel\" to leave them untouched.");
+
     VConfirmDeletionDialog dialog(tr("Confirm Deleting Attachments"),
+                                  text,
                                   info,
-                                  names,
+                                  items,
                                   false,
                                   false,
                                   false,
                                   g_vnote->getMainWindow());
     if (dialog.exec()) {
-        names = dialog.getConfirmedFiles();
+        items = dialog.getConfirmedItems();
+
+        QVector<QString> names;
+        for (auto const & item : items) {
+            names.push_back(item.m_name);
+        }
 
         if (!m_file->deleteAttachments(names)) {
             VUtils::showMessage(QMessageBox::Warning,
@@ -372,13 +383,11 @@ void VAttachmentList::sortItems()
     dialog.treeUpdated();
 
     if (dialog.exec()) {
-        int cnt = tree->topLevelItemCount();
-        Q_ASSERT(cnt == attas.size());
-        QVector<int> sortedIdx(cnt, -1);
-        for (int i = 0; i < cnt; ++i) {
-            QTreeWidgetItem *item = tree->topLevelItem(i);
-            Q_ASSERT(item);
-            sortedIdx[i] = item->data(0, Qt::UserRole).toInt();
+        QVector<QVariant> data = dialog.getSortedData();
+        Q_ASSERT(data.size() == attas.size());
+        QVector<int> sortedIdx(data.size(), -1);
+        for (int i = 0; i < data.size(); ++i) {
+            sortedIdx[i] = data[i].toInt();
         }
 
         m_file->sortAttachments(sortedIdx);
